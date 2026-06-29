@@ -1,4 +1,6 @@
-## IMPACT
+# Opens an SFTP (Secure File Transfer Protocol) session through the existing Bastion connection and 
+# pulls enrichment policy files from the Netcool/Impact server.these are files that define how alerts
+# get enriched with business context, for example SAP lookups. Returns a list of the pulled files tagged as 'policy'.
 
 import logging      #Logging
 

@@ -1,4 +1,6 @@
-## OBJECT_SERVER
+# Opens a SQL connection to the ObjectServer (NCOMS_P) on port 4100 through the Bastion and queries the 
+# ALERTS.STATUS table to extract live active alerts and automation rules — including triggers, escalation rules and correlation rules. 
+# Returns the query results as structured rows of data.
 
 import logging
 import pymysql

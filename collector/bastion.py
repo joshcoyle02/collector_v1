@@ -1,3 +1,7 @@
+# Opens a secure SSH connection to the Bastion host () using a private key, and returns
+# the active session so the rest of the collector can tunnel throguh it to reach the Netcool targets
+
+
 import paramiko     # Python library that supports SSH connections.
 import logging      # Pythons logging library
 

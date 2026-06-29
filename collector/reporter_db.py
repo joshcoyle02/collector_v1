@@ -1,4 +1,8 @@
-## REPORTER_DB
+# Opens a JDBC connection to the Reporter DB and queries the events table to extract historical event data including volumes, 
+# sources and severity.Opens a JDBC connection to the Reporter DB and queries the events table to extract historical event
+# data including volumes, sources and severity. On the first run it pulls everything, on subsequent runs it only pulls records 
+# modified since the last extraction to avoid duplicates. Returns the query results as structured rows of data.
+
 import jaydebeapi   # Python library allows to connect to databases using JDBC
 import logging      # Logging
 

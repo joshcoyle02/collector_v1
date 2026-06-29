@@ -1,4 +1,6 @@
-## PROBE HOSTS
+# Opens an SFTP session through the existing Bastion connection and pulls two types of files from the Probe Hosts — .rules 
+# files which define how incoming alerts are matched, suppressed and deduplicated, and lookup files which are used to enrich 
+# alerts with additional context. Returns a list of all pulled files tagged as either 'rules' or 'lookup'.
 
 import logging      # Logging
 

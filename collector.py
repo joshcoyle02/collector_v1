@@ -1,4 +1,6 @@
-## MAIN
+# Runs the extraction function with the environments details passed in.
+# Information from the secure form should be placed in here.
+# Paramterers are subject to change when we get access to Netcool.
 
 from collector.run_extraction import run_extraction
 
