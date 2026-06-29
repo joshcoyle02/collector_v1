@@ -1,6 +1,5 @@
 ## PROBE HOSTS
 
-import paramiko     # SSH/SFTP library for pulling files
 import logging      # Logging
 
 logger = logging.getLogger(__name__)    # Logging for this file

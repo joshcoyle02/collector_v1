@@ -1,11 +1,11 @@
 import paramiko                                                 # SSH connection to Bastion
 import logging                                                  # Logging
 from sshtunnel import SSHTunnelForwarder                        # Tunnelling to each target
-from collector.bastion import connect_to_bastion                # Bastion function
-from collector.reporter_db import connect_to_reporter_db        # Reporter DB function
-from collector.object_server import connect_to_object_server    # ObjectServer function
-from collector.probe_hosts import connect_to_probe_hosts        # Probe Hosts function
-from collector.impact import connect_to_impact                  # Impact function
+from bastion import connect_to_bastion                # Bastion function
+from reporter_db import connect_to_reporter_db        # Reporter DB function
+from object_server import connect_to_object_server    # ObjectServer function
+from probe_hosts import connect_to_probe_hosts        # Probe Hosts function
+from impact import connect_to_impact                  # Impact function
 
 logger = logging.getLogger(__name__)    # Logger for this file.
 
