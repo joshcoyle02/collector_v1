@@ -3,9 +3,7 @@
 
 
 
-import paramiko                                                 # SSH connection to Bastion
 import logging                                                  # Logging
-from sshtunnel import SSHTunnelForwarder                        # Tunnelling to each target
 from collector.bastion import connect_to_bastion                # Bastion function
 from collector.reporter_db import connect_to_reporter_db        # Reporter DB function
 from collector.object_server import connect_to_object_server    # ObjectServer function
