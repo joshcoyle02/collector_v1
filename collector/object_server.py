@@ -4,12 +4,23 @@
 
 import logging
 import pymysql
+
 logger = logging.getLogger(__name__)
 
-def connect_to_object_server(client, db_user, db_password, last_extraction_date=None):
+def connect_to_object_server(client, object_server_host, db_user, db_password, last_extraction_date=None):
     try:
+        # Opens a tunnel through the existing Bastion session to ObjectServer
+        transport = client.get_transport()
+        channel = transport.open_channel(
+            "direct-tcpip",
+            (object_server_host, 4100),
+            ("127.0.0.1", 0)
+        )
+        logger.info(f"Tunnel established to ObjectServer - {object_server_host}:4100")
+
         # Opens a SQL connection to Object Server
-        connection = pymysql.connect(host='127.0.0.1', port=4100, user=db_user, password=db_password)
+        connection = pymysql.connect(host='127.0.0.1', port=4100, user=db_user, password=db_password, defer_connect=True)
+        connection.connect(sock=channel)
         cursor = connection.cursor()
         logger.info("ObjectServer connection established")
 
@@ -17,7 +28,7 @@ def connect_to_object_server(client, db_user, db_password, last_extraction_date=
         if last_extraction_date is None:
             query = "SELECT * FROM ALERTS.STATUS"
         else:
-            query = f"SELECT * FROM ALERTS.STATUS WHERE LastOccurence >= '{last_extraction_date}'"
+            query = f"SELECT * FROM ALERTS.STATUS WHERE LastOccurrence >= '{last_extraction_date}'"
 
         cursor.execute(query)
         results = cursor.fetchall()

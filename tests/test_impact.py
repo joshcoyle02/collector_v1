@@ -5,7 +5,7 @@
 
 # Results of each test are logged with a timestamp to test_impact.txt.
 
-# TO RUN - python -m unittest tests/test_object_server.py
+# TO RUN - python -m unittest tests/test_impact.py
 
 import unittest
 import logging

@@ -3,6 +3,10 @@
 # data including volumes, sources and severity. On the first run it pulls everything, on subsequent runs it only pulls records 
 # modified since the last extraction to avoid duplicates. Returns the query results as structured rows of data.
 
+## IMPORTANT ##
+# Have to implement the connection to the tunnel created in client. 
+# JDBC is tricky, do this when a test instance has been created.
+
 import jaydebeapi   # Python library allows to connect to databases using JDBC
 import logging      # Logging
 
@@ -21,7 +25,7 @@ def connect_to_reporter_db(client, jdbc_url, db_user, db_password, jar_path, las
         else:
 
             # Only pulls records modified since the last extraction.  No duplicates.
-            query = f"SELECT * FROM REPORTER.EVENTS WHERE LASTMODIFIED >= '{last_extraction_date}"
+            query = f"SELECT * FROM REPORTER.EVENTS WHERE LASTMODIFIED >= '{last_extraction_date}'"
 
         # Runs SQL query from the IF statement and stores it in results.
         cursor.execute(query)

@@ -12,7 +12,7 @@ from collector.impact import connect_to_impact                  # Impact functio
 
 logger = logging.getLogger(__name__)    # Logger for this file.
 
-def run_extraction(hostname, username, key_path, jdbc_url, db_user, db_password, jar_path, last_extraction_date=None):
+def run_extraction(hostname, username, object_server_host, key_path, jdbc_url, db_user, db_password, jar_path, last_extraction_date=None):
     try:
         client = connect_to_bastion(hostname, username, key_path)       # Calls bastion connection function from bastion.py
         if client is None:
@@ -23,7 +23,7 @@ def run_extraction(hostname, username, key_path, jdbc_url, db_user, db_password,
         reporter_db_results = connect_to_reporter_db(client, jdbc_url, db_user, db_password, jar_path, last_extraction_date)    
 
         #Calls object_server function from object_server.py
-        object_server_results = connect_to_object_server(client, db_user, db_password, last_extraction_date)
+        object_server_results = connect_to_object_server(client, object_server_host, db_user, db_password, last_extraction_date)
 
         #Calls probe_hosts function from probe_hosts.py
         probe_hosts_results = connect_to_probe_hosts(client, last_extraction_date)
@@ -48,7 +48,7 @@ def run_extraction(hostname, username, key_path, jdbc_url, db_user, db_password,
         }
     
     except Exception as e:
-        logger.error(f"Extraction failed -e {e}")
+        logger.error(f"Extraction failed - {e}")
         if client:
             client.close()
             logger.info("Bastion session closed")
