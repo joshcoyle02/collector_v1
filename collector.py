@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     results = run_extraction(
-        key_path="",                    # Path to your SSH private key
+        # key_path="",                    # Path to your SSH private key
         db_user="netcool",
         db_password="netcool_password",
         db_name="netcool_mock",
