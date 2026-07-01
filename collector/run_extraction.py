@@ -10,7 +10,7 @@ from collector.impact import connect_to_impact
 
 logger = logging.getLogger(__name__)
 
-def run_extraction(key_path, db_user, db_password, db_name, last_extraction_date=None):
+def run_extraction(db_user, db_password, db_name, last_extraction_date=None):
     try:
         reporter_db_results = connect_to_reporter_db(
             host="localhost",
