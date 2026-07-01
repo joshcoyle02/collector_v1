@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     results = run_extraction(
-        key_path="/home/ubuntu/.ssh/id_rsa",
+        # key_path="/home/ubuntu/.ssh/id_rsa",
         netcool_host="172.31.42.80",
         reporter_db_port=5432,
         db_user="netcool",
