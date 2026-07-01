@@ -28,7 +28,8 @@ def connect_to_reporter_db(host, port, db_user, db_password, db_name, last_extra
             query = f"SELECT * FROM reporter_status WHERE last_modified >= '{last_extraction_date}'"
 
         cursor.execute(query)
-        results = cursor.fetchall()
+        columns = [col.name for col in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
         logger.info(f"Reporter DB extraction complete -{len(results)} records pulled")
 
         cursor.close()
