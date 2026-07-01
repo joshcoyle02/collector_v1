@@ -1,0 +1,107 @@
+01/07/26
+
+Changes made to get the collector running against the AWS Netcool mock
+(dev box -> 172.31.42.80 direct, no bastion tunnel)
+
+--------------------------------------------------------------------------
+1. run_extraction.py - fixed broken function signature
+--------------------------------------------------------------------------
+Before: run_extraction(db_user, db_password, db_name, last_extraction_date=None)
+        but the body referenced "key_path" and hardcoded host="localhost"
+        for every component. Calling it with netcool_host / key_path
+        (as collector.py was doing) raised:
+            TypeError: run_extraction() got an unexpected keyword argument 'netcool_host'
+
+Now: run_extraction(netcool_host, key_path, db_user, db_password, db_name,
+                     reporter_db_port=5432, object_server_port=4100,
+                     sftp_port=22, last_extraction_date=None)
+
+netcool_host and key_path are passed through to every connector
+(reporter_db, object_server, probe_hosts, impact) instead of each one
+hardcoding "localhost". This lets the same code run either on the mock
+host itself (host="localhost") or on a separate box with a direct route
+(host=<private IP>).
+
+--------------------------------------------------------------------------
+2. collector.py - updated call to match, filled in key_path
+--------------------------------------------------------------------------
+Added netcool_host="172.31.42.80" and a real key_path
+("/home/ubuntu/.ssh/id_rsa") instead of leaving key_path commented out.
+Without a real key_path, probe_hosts.py and impact.py can't authenticate
+the SFTP session at all.
+
+--------------------------------------------------------------------------
+3. probe_hosts.py / impact.py - key_path was missing from the signature
+--------------------------------------------------------------------------
+Both functions referenced "key_path" inside the try block but didn't
+accept it as a parameter (would have thrown NameError as soon as
+run_extraction started passing it through). Added key_path as a required
+argument to both connect_to_probe_hosts() and connect_to_impact().
+
+--------------------------------------------------------------------------
+4. probe_hosts.py / impact.py - hung instead of failing on a blocked port
+--------------------------------------------------------------------------
+paramiko.Transport((host, port)) opens the raw socket internally with
+no timeout, so if a port is filtered/blocked (no response, as opposed to
+an active refusal), it just hangs on the OS default TCP timeout - could
+be minutes with no error printed.
+
+Fixed by opening the socket manually first with an explicit timeout,
+then handing the already-connected socket to paramiko.Transport():
+
+    sock = socket.create_connection((host, port), timeout=connect_timeout)
+    transport = paramiko.Transport(sock)
+
+Both functions now take a connect_timeout=10 argument, so a blocked port
+fails in ~10 seconds with a clear "Connection timed out" error instead
+of hanging silently.
+
+--------------------------------------------------------------------------
+5. probe_hosts.py / impact.py - wrong SFTP port (2022 -> 22)
+--------------------------------------------------------------------------
+This was the actual root cause of the timeouts once the hang was fixed
+and a real "Connection timed out" error came back.
+
+Port 2022 came from the earlier bastion-tunnel handover doc, where
+tunnel.py forwarded a LOCAL port 2022 through the bastion to the real
+SFTP port (22) on the Netcool host - i.e. 2022 was only ever a
+tunnel-local mapping, never the real port on the box itself.
+
+Since the dev box has a direct route to the Netcool host (no bastion,
+no tunnel), the correct port is the standard SFTP port 22, same as any
+plain "sftp netcool@172.31.42.80" command. Default port on both
+functions (and sftp_port in run_extraction.py) changed from 2022 to 22.
+
+--------------------------------------------------------------------------
+Result after all fixes
+--------------------------------------------------------------------------
+reporter_db      -> connects, pulls ~12000 records (PostgreSQL, port 5432)
+object_server    -> connects, pulls records (raw TCP, port 4100)
+probe_hosts      -> connects over SFTP (port 22) using the dev box's SSH key
+impact           -> connects over SFTP (port 22) using the dev box's SSH key
+
+--------------------------------------------------------------------------
+How it all fits together now
+--------------------------------------------------------------------------
+collector.py is the entry point. It calls run_extraction(), passing in
+one host (netcool_host) and one SSH key (key_path) that get used by all
+four components. run_extraction() calls each component's connect_to_*()
+function in turn:
+
+  - connect_to_reporter_db  -> psycopg2, PostgreSQL query on port 5432
+  - connect_to_object_server -> raw TCP socket, sends SQL text, reads
+                                 CSV back on port 4100
+  - connect_to_probe_hosts  -> SFTP (via paramiko) on port 22, lists
+                                 .rules/lookup files
+  - connect_to_impact       -> SFTP (via paramiko) on port 22, lists
+                                 policy files
+
+Each connector returns None on failure (with the error logged) instead
+of raising, so one failing source doesn't stop the others from running.
+run_extraction() collects all four results into one dict, which
+collector.py writes out to extraction_<timestamp>.json.
+
+Note: the "dem" (MySQL) source mentioned in the handover doc is not
+wired up in run_extraction.py yet - there's no connect_to_dem() and
+mysql-connector-python isn't in requirements.txt. Flagging in case that
+component still needs to be added.
