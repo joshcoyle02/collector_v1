@@ -1,39 +1,41 @@
-# Opens an SFTP session through the existing Bastion connection and pulls two types of files from the Probe Hosts — .rules 
+# Opens an SFTP session and pulls two types of files from the Probe Hosts — .rules 
 # files which define how incoming alerts are matched, suppressed and deduplicated, and lookup files which are used to enrich 
 # alerts with additional context. Returns a list of all pulled files tagged as either 'rules' or 'lookup'.
 
+import paramiko     # SSH/SFTP library
 import logging      # Logging
 
 logger = logging.getLogger(__name__)    # Logging for this file
 
-def connect_to_probe_hosts(client, last_extraction_date=None):
+def connect_to_probe_hosts(host, key_path, port=22, username='netcool', last_extraction_date=None):
     try:
-        # Opens a SFTP sesssion using the bastion session (client) and creates an
-        # empty list that we'll add each file we pull to.
-        sftp = client.open_sftp()
-        logger.info("Probe hosts SFTP connection established")
+        # Opens a direct SFTP connection to Probe Hosts
+        transport = paramiko.Transport((host, port))
+        private_key = paramiko.RSAKey.from_private_key_file(key_path)
+        transport.connect(username=username, pkey=private_key)
+        sftp = paramiko.SFTPClient.from_transport(transport)
+        logger.info(f"Probe Hosts SFTP connection established - {host}:{port}")
         files_pulled = []
 
-        if last_extraction_date is None:
-            rules_files = sftp.listdir('...')        ## Replace with actual directory.
-            lookup_files = sftp.listdir('...')  
-        else:
-            # Pulls files based on if the modified time of the file is after the last extraction date.
-            rules_files = [f for f in sftp.listdir('...') if sftp.stat(f'...{f}').st_mtime >= last_extraction_date]
-            lookup_files = [f for f in sftp.listdir('...') if sftp.stat(f'...{f}').st_mtime >= last_extraction_date]
+        rules_path = '/opt/IBM/tivoli/netcool/omnibus/probes'
+        lookup_path = '/opt/IBM/tivoli/netcool/omnibus/probes'     # To be confirmed
 
-        # Loops through each rules file found and appends it to files_pulled list.
-        # Tags it as 'rules'.
+        if last_extraction_date is None:
+            rules_files = sftp.listdir(rules_path)
+            lookup_files = sftp.listdir(lookup_path)
+        else:
+            rules_files = [f for f in sftp.listdir(rules_path) if sftp.stat(f'{rules_path}/{f}').st_mtime >= last_extraction_date]
+            lookup_files = [f for f in sftp.listdir(lookup_path) if sftp.stat(f'{lookup_path}/{f}').st_mtime >= last_extraction_date]
+
         for f in rules_files:
             files_pulled.append(('rules', f))
 
-        # Loops through each lookup file found and appends it to files_pulled list.
-        # Tags it as 'lookup'.
         for f in lookup_files:
             files_pulled.append(('lookup', f))
 
         logger.info(f"Probe Hosts extraction complete - {len(files_pulled)} files pulled")
         sftp.close()
+        transport.close()
         return files_pulled
     
     except Exception as e:

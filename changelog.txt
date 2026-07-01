@@ -1,0 +1,14 @@
+
+01/07/26 09:46
+Made changes to the reporter_db and changed the SQL method from JDBC to PostgreSQL to match Haydn's AWS instance.
+
+
+01/07/26 10:04
+Removed client connection from probe_hosts and replaced it with a direct connection
+I done this because I am testing it locally.  Will need bastion for Netcool
+
+Also changed the object server to a direct connection for testing.
+
+
+
+pip install -r requirements.txt

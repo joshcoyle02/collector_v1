@@ -1,30 +1,35 @@
-# Opens an SFTP (Secure File Transfer Protocol) session through the existing Bastion connection and 
-# pulls enrichment policy files from the Netcool/Impact server.these are files that define how alerts
-# get enriched with business context, for example SAP lookups. Returns a list of the pulled files tagged as 'policy'.
+# Opens an SFTP session and pulls enrichment policy files from the Netcool/Impact server.
+# These are files that define how alerts get enriched with business context, for example SAP lookups. 
+# Returns a list of the pulled files tagged as 'policy'.
 
-import logging      #Logging
+import paramiko     # SSH/SFTP library
+import logging      # Logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)    # Logging for this file
 
-def connect_to_impact(client, last_extraction_date=None):
+def connect_to_impact(host, key_path, port=22, username='netcool', last_extraction_date=None):
     try:
-        sftp = client.open_sftp()
-        logger.info("Impact SFTP connection established")
+        # Opens a direct SFTP connection to Impact
+        transport = paramiko.Transport((host, port))
+        private_key = paramiko.RSAKey.from_private_key_file(key_path)
+        transport.connect(username=username, pkey=private_key)
+        sftp = paramiko.SFTPClient.from_transport(transport)
+        logger.info(f"Impact SFTP connection established - {host}:{port}")
         files_pulled = []
 
-        impact_path = None     # Path to enrichment files.  Will be updated with actual Netcool path.
+        impact_path = '/opt/IBM/tivoli/netcool/impact/policy'      # From handover doc
 
         if last_extraction_date is None:
-            policy_files = sftp.listdir(impact_path)    # Pulls all files.
+            policy_files = sftp.listdir(impact_path)
         else:
-            # Pulls files modified since the last extraction date.
             policy_files = [f for f in sftp.listdir(impact_path) if sftp.stat(f'{impact_path}/{f}').st_mtime >= last_extraction_date]
-        
+
         for f in policy_files:
             files_pulled.append(('policy', f))
-        
-        logger.info(f"Impact extraction complete - {len(files_pulled)} files pulled.")
+
+        logger.info(f"Impact extraction complete - {len(files_pulled)} files pulled")
         sftp.close()
+        transport.close()
         return files_pulled
 
     except Exception as e:

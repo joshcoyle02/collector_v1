@@ -1,43 +1,30 @@
-# Opens a SQL connection to the ObjectServer (NCOMS_P) on port 4100 through the Bastion and queries the 
-# ALERTS.STATUS table to extract live active alerts and automation rules — including triggers, escalation rules and correlation rules. 
-# Returns the query results as structured rows of data.
+# Opens a raw TCP connection to ObjectServer on port 4100 and sends SQL queries
+# to extract live active alerts and automation rules. No credentials needed.
+# Returns the query results as structured data.
 
-import logging
-import pymysql
+import socket       # Python built in library for raw TCP connections
+import logging      # Logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)    # Logger for this file
 
-def connect_to_object_server(client, object_server_host, db_user, db_password, last_extraction_date=None):
+def connect_to_object_server(host, port=4100, last_extraction_date=None):
     try:
-        # Opens a tunnel through the existing Bastion session to ObjectServer
-        transport = client.get_transport()
-        channel = transport.open_channel(
-            "direct-tcpip",
-            (object_server_host, 4100),
-            ("127.0.0.1", 0)
-        )
-        logger.info(f"Tunnel established to ObjectServer - {object_server_host}:4100")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+        logger.info(f"ObjectServer connection established - {host}:{port}")
 
-        # Opens a SQL connection to Object Server
-        connection = pymysql.connect(host='127.0.0.1', port=4100, user=db_user, password=db_password, defer_connect=True)
-        connection.connect(sock=channel)
-        cursor = connection.cursor()
-        logger.info("ObjectServer connection established")
-
-        # Pulls alert data from DB.  Checks if this is the first extraction.
         if last_extraction_date is None:
-            query = "SELECT * FROM ALERTS.STATUS"
+            query = "select Node,Severity,Summary from alerts.status;\n"
         else:
-            query = f"SELECT * FROM ALERTS.STATUS WHERE LastOccurrence >= '{last_extraction_date}'"
+            query = f"select Node,Severity,Summary from alerts.status where LastOccurrence >= '{last_extraction_date}';\n"
 
-        cursor.execute(query)
-        results = cursor.fetchall()
-        logger.info(f"ObjectServer extraction complete - {len(results)} records pulled.")
-
-        cursor.close()
-        connection.close()
+        sock.sendall(query.encode())
+        response = sock.recv(4096)
+        results = response.decode()
+        logger.info(f"ObjectServer extraction complete - {len(results.splitlines())} records pulled")
+        sock.close()
         return results
-    
+
     except Exception as e:
-        logger.error(f"Object server extraction failed - {e}")
-        return None            
+        logger.error(f"ObjectServer extraction failed - {e}")
+        return None
