@@ -11,7 +11,7 @@ from collector.impact import connect_to_impact
 logger = logging.getLogger(__name__)
 
 def run_extraction(netcool_host, key_path, db_user, db_password, db_name,
-                    reporter_db_port=5432, object_server_port=4100, sftp_port=2022,
+                    reporter_db_port=5432, object_server_port=4100, sftp_port=22,
                     last_extraction_date=None):
     try:
         reporter_db_results = connect_to_reporter_db(

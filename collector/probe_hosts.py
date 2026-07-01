@@ -8,7 +8,7 @@ import logging      # Logging
 
 logger = logging.getLogger(__name__)    # Logging for this file
 
-def connect_to_probe_hosts(host, key_path, port=2022, username='netcool', last_extraction_date=None, connect_timeout=10):
+def connect_to_probe_hosts(host, key_path, port=22, username='netcool', last_extraction_date=None, connect_timeout=10):
     try:
         # Opens a direct SFTP connection to Probe Hosts
         # A pre-connected, timed-out socket is used instead of paramiko.Transport((host, port))
