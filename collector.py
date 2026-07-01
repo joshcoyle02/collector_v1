@@ -1,5 +1,6 @@
 # Runs the extraction and saves the results to a JSON file.
-# The collector runs on the same host as the mock, so no bastion or tunnel is needed.
+# netcool_host must have a direct route from this box (no bastion/tunnel) - set it to
+# "localhost" if running on the mock host itself, or its private IP otherwise.
 
 import json
 import logging
@@ -11,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     results = run_extraction(
-        # key_path="/home/ubuntu/.ssh/id_rsa",
         netcool_host="172.31.42.80",
+        key_path="/home/ubuntu/.ssh/id_rsa",
         reporter_db_port=5432,
         db_user="netcool",
         db_password="netcool_password",

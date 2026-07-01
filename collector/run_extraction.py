@@ -1,6 +1,6 @@
 # Combines all the collector functions into one singular function "run_extraction".
-# No bastion or tunnel needed — the collector runs on the same host as the mock,
-# so all components connect directly to localhost.
+# host is a required argument - pass "localhost" if the collector runs on the same
+# host as the mock, or the Netcool host's IP if it's running elsewhere with a direct route.
 
 import logging
 from collector.reporter_db import connect_to_reporter_db
@@ -10,11 +10,13 @@ from collector.impact import connect_to_impact
 
 logger = logging.getLogger(__name__)
 
-def run_extraction(db_user, db_password, db_name, last_extraction_date=None):
+def run_extraction(netcool_host, key_path, db_user, db_password, db_name,
+                    reporter_db_port=5432, object_server_port=4100, sftp_port=2022,
+                    last_extraction_date=None):
     try:
         reporter_db_results = connect_to_reporter_db(
-            host="localhost",
-            port=5432,
+            host=netcool_host,
+            port=reporter_db_port,
             db_user=db_user,
             db_password=db_password,
             db_name=db_name,
@@ -22,18 +24,21 @@ def run_extraction(db_user, db_password, db_name, last_extraction_date=None):
         )
 
         object_server_results = connect_to_object_server(
-            host="localhost",
+            host=netcool_host,
+            port=object_server_port,
             last_extraction_date=last_extraction_date
         )
 
         probe_hosts_results = connect_to_probe_hosts(
-            host="localhost",
+            host=netcool_host,
+            port=sftp_port,
             key_path=key_path,
             last_extraction_date=last_extraction_date
         )
 
         impact_results = connect_to_impact(
-            host="localhost",
+            host=netcool_host,
+            port=sftp_port,
             key_path=key_path,
             last_extraction_date=last_extraction_date
         )
