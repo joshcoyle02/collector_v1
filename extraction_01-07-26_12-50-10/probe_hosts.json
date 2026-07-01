@@ -1,0 +1,26 @@
+[
+  [
+    "rules",
+    "scom.rules"
+  ],
+  [
+    "rules",
+    "severity.lookup"
+  ],
+  [
+    "rules",
+    "mttrapd.rules"
+  ],
+  [
+    "lookup",
+    "scom.rules"
+  ],
+  [
+    "lookup",
+    "severity.lookup"
+  ],
+  [
+    "lookup",
+    "mttrapd.rules"
+  ]
+]
