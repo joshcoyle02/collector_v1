@@ -7,7 +7,7 @@ import logging      # Logging
 
 logger = logging.getLogger(__name__)    # Logging for this file
 
-def connect_to_impact(host, port=22, username='netcool', last_extraction_date=None):
+def connect_to_impact(host, key_path, port=22, username='netcool', last_extraction_date=None):
     try:
         # Opens a direct SFTP connection to Impact
         transport = paramiko.Transport((host, port))
