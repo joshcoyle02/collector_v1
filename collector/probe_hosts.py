@@ -49,3 +49,4 @@ def connect_to_probe_hosts(host, key_path, output_dir, port=22, username='netcoo
     except Exception as e:
         logger.error(f"Probe hosts extraction failed - {e}")
         return None
+    
