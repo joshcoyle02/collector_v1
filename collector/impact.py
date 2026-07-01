@@ -2,15 +2,19 @@
 # These are files that define how alerts get enriched with business context, for example SAP lookups. 
 # Returns a list of the pulled files tagged as 'policy'.
 
+import socket       # Used to open the TCP connection with an explicit timeout
 import paramiko     # SSH/SFTP library
 import logging      # Logging
 
 logger = logging.getLogger(__name__)    # Logging for this file
 
-def connect_to_impact(host, key_path, port=22, username='netcool', last_extraction_date=None):
+def connect_to_impact(host, key_path, port=22, username='netcool', last_extraction_date=None, connect_timeout=10):
     try:
         # Opens a direct SFTP connection to Impact
-        transport = paramiko.Transport((host, port))
+        # A pre-connected, timed-out socket is used instead of paramiko.Transport((host, port))
+        # because that path has no timeout and hangs on the OS default if the port is filtered.
+        sock = socket.create_connection((host, port), timeout=connect_timeout)
+        transport = paramiko.Transport(sock)
         private_key = paramiko.RSAKey.from_private_key_file(key_path)
         transport.connect(username=username, pkey=private_key)
         sftp = paramiko.SFTPClient.from_transport(transport)
