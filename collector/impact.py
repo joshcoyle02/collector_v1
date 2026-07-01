@@ -1,14 +1,15 @@
-# Opens an SFTP session and pulls enrichment policy files from the Netcool/Impact server.
-# These are files that define how alerts get enriched with business context, for example SAP lookups. 
-# Returns a list of the pulled files tagged as 'policy'.
+# Opens an SFTP session and downloads enrichment policy files from the Netcool/Impact server.
+# These are files that define how alerts get enriched with business context, for example SAP lookups.
+# Saves each file under output_dir and returns metadata (type, filename, local path) for every file pulled.
 
+import os           # Local file/folder handling
 import socket       # Used to open the TCP connection with an explicit timeout
 import paramiko     # SSH/SFTP library
 import logging      # Logging
 
 logger = logging.getLogger(__name__)    # Logging for this file
 
-def connect_to_impact(host, key_path, port=22, username='netcool', last_extraction_date=None, connect_timeout=10):
+def connect_to_impact(host, key_path, output_dir, port=22, username='netcool', last_extraction_date=None, connect_timeout=10):
     try:
         # Opens a direct SFTP connection to Impact
         # A pre-connected, timed-out socket is used instead of paramiko.Transport((host, port))
@@ -28,8 +29,12 @@ def connect_to_impact(host, key_path, port=22, username='netcool', last_extracti
         else:
             policy_files = [f for f in sftp.listdir(impact_path) if sftp.stat(f'{impact_path}/{f}').st_mtime >= last_extraction_date]
 
+        local_dir = os.path.join(output_dir, 'impact', 'policy')
+        os.makedirs(local_dir, exist_ok=True)
         for f in policy_files:
-            files_pulled.append(('policy', f))
+            local_path = os.path.join(local_dir, f)
+            sftp.get(f'{impact_path}/{f}', local_path)
+            files_pulled.append({'type': 'policy', 'filename': f, 'local_path': local_path})
 
         logger.info(f"Impact extraction complete - {len(files_pulled)} files pulled")
         sftp.close()

@@ -1,14 +1,16 @@
-# Opens an SFTP session and pulls two types of files from the Probe Hosts — .rules 
-# files which define how incoming alerts are matched, suppressed and deduplicated, and lookup files which are used to enrich 
-# alerts with additional context. Returns a list of all pulled files tagged as either 'rules' or 'lookup'.
+# Opens an SFTP session and downloads two types of files from the Probe Hosts — .rules
+# files which define how incoming alerts are matched, suppressed and deduplicated, and lookup files which are used to enrich
+# alerts with additional context. Saves each file under output_dir and returns metadata
+# (type, filename, local path) for every file pulled.
 
+import os           # Local file/folder handling
 import socket       # Used to open the TCP connection with an explicit timeout
 import paramiko     # SSH/SFTP library
 import logging      # Logging
 
 logger = logging.getLogger(__name__)    # Logging for this file
 
-def connect_to_probe_hosts(host, key_path, port=22, username='netcool', last_extraction_date=None, connect_timeout=10):
+def connect_to_probe_hosts(host, key_path, output_dir, port=22, username='netcool', last_extraction_date=None, connect_timeout=10):
     try:
         # Opens a direct SFTP connection to Probe Hosts
         # A pre-connected, timed-out socket is used instead of paramiko.Transport((host, port))
@@ -31,17 +33,19 @@ def connect_to_probe_hosts(host, key_path, port=22, username='netcool', last_ext
             rules_files = [f for f in sftp.listdir(rules_path) if sftp.stat(f'{rules_path}/{f}').st_mtime >= last_extraction_date]
             lookup_files = [f for f in sftp.listdir(lookup_path) if sftp.stat(f'{lookup_path}/{f}').st_mtime >= last_extraction_date]
 
-        for f in rules_files:
-            files_pulled.append(('rules', f))
-
-        for f in lookup_files:
-            files_pulled.append(('lookup', f))
+        for tag, remote_dir, filenames in (('rules', rules_path, rules_files), ('lookup', lookup_path, lookup_files)):
+            local_dir = os.path.join(output_dir, 'probe_hosts', tag)
+            os.makedirs(local_dir, exist_ok=True)
+            for f in filenames:
+                local_path = os.path.join(local_dir, f)
+                sftp.get(f'{remote_dir}/{f}', local_path)
+                files_pulled.append({'type': tag, 'filename': f, 'local_path': local_path})
 
         logger.info(f"Probe Hosts extraction complete - {len(files_pulled)} files pulled")
         sftp.close()
         transport.close()
         return files_pulled
-    
+
     except Exception as e:
         logger.error(f"Probe hosts extraction failed - {e}")
         return None

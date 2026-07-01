@@ -10,7 +10,7 @@ from collector.impact import connect_to_impact
 
 logger = logging.getLogger(__name__)
 
-def run_extraction(netcool_host, key_path, db_user, db_password, db_name,
+def run_extraction(netcool_host, key_path, db_user, db_password, db_name, output_dir,
                     reporter_db_port=5432, object_server_port=4100, sftp_port=22,
                     last_extraction_date=None):
     try:
@@ -33,6 +33,7 @@ def run_extraction(netcool_host, key_path, db_user, db_password, db_name,
             host=netcool_host,
             port=sftp_port,
             key_path=key_path,
+            output_dir=output_dir,
             last_extraction_date=last_extraction_date
         )
 
@@ -40,6 +41,7 @@ def run_extraction(netcool_host, key_path, db_user, db_password, db_name,
             host=netcool_host,
             port=sftp_port,
             key_path=key_path,
+            output_dir=output_dir,
             last_extraction_date=last_extraction_date
         )
 
