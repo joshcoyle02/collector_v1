@@ -4,6 +4,7 @@
 
 import json
 import logging
+import os
 from datetime import datetime
 from collector.run_extraction import run_extraction
 
@@ -24,8 +25,13 @@ if __name__ == "__main__":
     if results is None:
         logger.error("Extraction failed - no output written")
     else:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"extraction_{timestamp}.json"
-        with open(filename, "w") as f:
-            json.dump(results, f, indent=2, default=str)
-        logger.info("Results written to %s", filename)
+        timestamp = datetime.now().strftime("%d-%m-%y_%H-%M-%S")
+        extract_dir = f"extraction_{timestamp}"
+        os.makedirs(extract_dir, exist_ok=True)
+
+        for source, source_results in results.items():
+            source_path = os.path.join(extract_dir, f"{source}.json")
+            with open(source_path, "w") as f:
+                json.dump(source_results, f, indent=2, default=str)
+
+        logger.info("Results written to %s", extract_dir)
